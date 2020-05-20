@@ -58,6 +58,10 @@ NM_ONLY_TESTS = {
         MINIMUM_VERSION: "'1.20.0'",
         "comment": "# NetworkManager 1.20.0 introduced ethtool settings support",
     },
+    "playbooks/tests_ethtool_coalesce.yml": {
+        MINIMUM_VERSION: "'1.25.1'",
+        "comment": "# NetworkManager 1.25.1 introduced ethtool coalesce support",
+    },
     "playbooks/tests_reapply.yml": {},
     "playbooks/tests_states.yml": {},
     "playbooks/tests_802_1x.yml": {},

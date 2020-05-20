@@ -123,7 +123,36 @@ ETHTOOL_FEATURES_DEFAULTS = {
     "txvlan": None,
 }
 
-ETHTOOL_DEFAULTS = {"features": ETHTOOL_FEATURES_DEFAULTS}
+
+ETHTOOL_COALESCE_DEFAULTS = {
+    "adaptive_rx": None,
+    "adaptive_tx": None,
+    "pkt_rate_high": None,
+    "pkt_rate_low": None,
+    "rx_frames": None,
+    "rx_frames_high": None,
+    "rx_frames_irq": None,
+    "rx_frames_low": None,
+    "rx_usecs": None,
+    "rx_usecs_high": None,
+    "rx_usecs_irq": None,
+    "rx_usecs_low": None,
+    "sample_interval": None,
+    "stats_block_usecs": None,
+    "tx_frames": None,
+    "tx_frames_high": None,
+    "tx_frames_irq": None,
+    "tx_frames_low": None,
+    "tx_usecs": None,
+    "tx_usecs_high": None,
+    "tx_usecs_irq": None,
+    "tx_usecs_low": None,
+}
+
+ETHTOOL_DEFAULTS = {
+    "features": ETHTOOL_FEATURES_DEFAULTS,
+    "coalesce": ETHTOOL_COALESCE_DEFAULTS,
+}
 
 ETHERNET_DEFAULTS = {"autoneg": None, "duplex": None, "speed": 0}
 
