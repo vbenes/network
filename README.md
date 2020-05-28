@@ -352,7 +352,7 @@ The IP configuration supports the following options:
 
 The ethtool settings allow to enable or disable various features. The names
 correspond to the names used by the `ethtool` utility. Depending on the actual
-kernel and device, changing some features might not be supported.
+kernel and device, changing some options might not be supported.
 
 ```yaml
   ethtool:
@@ -409,6 +409,29 @@ kernel and device, changing some features might not be supported.
       tx-udp_tnl-segmentation: yes|no  # optional
       tx-vlan-stag-hw-insert: yes|no  # optional
       txvlan: yes|no  # optional
+    coalesce:
+      adaptive_rx: yes|no  # optional
+      adaptive_tx: yes|no  # optional
+      pkt_rate_high: [0, UINT32_MAX] # optional
+      pkt_rate_low: [0, UINT32_MAX] # optional
+      rx_frames: [0, UINT32_MAX] # optional
+      rx_frames_high: [0, UINT32_MAX] # optional
+      rx_frames_irq: [0, UINT32_MAX] # optional
+      rx_frames_low: [0, UINT32_MAX] # optional
+      rx_usecs: [0, UINT32_MAX] # optional
+      rx_usecs_high: [0, UINT32_MAX] # optional
+      rx_usecs_irq: [0, UINT32_MAX] # optional
+      rx_usecs_low: [0, UINT32_MAX] # optional
+      sample_interval: [0, UINT32_MAX] # optional
+      stats_block_usecs: [0, UINT32_MAX] # optional
+      tx_frames: [0, UINT32_MAX] # optional
+      tx_frames_high: [0, UINT32_MAX] # optional
+      tx_frames_irq: [0, UINT32_MAX] # optional
+      tx_frames_low: [0, UINT32_MAX] # optional
+      tx_usecs: [0, UINT32_MAX] # optional
+      tx_usecs_high: [0, UINT32_MAX] # optional
+      tx_usecs_irq: [0, UINT32_MAX] # optional
+      tx_usecs_low: [0, UINT32_MAX] # optional
 ```
 
 ### `ieee802_1x`
