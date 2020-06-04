@@ -1,12 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 ---
-- name: Test configuring bond with slaves
-  hosts: all
+- hosts: all
   vars:
+    master_profile: bond0
+    master_device: nm-bond
+    slave1_profile: bond0.0
     slave1_device: test1
+    slave2_profile: bond0.1
     slave2_device: test2
-
   tasks:
+    - name: "INIT Prepare setup"
+      debug:
+        msg: "##################################################"
     - include_tasks: tasks/create_test_interfaces.yml
     - include_tasks: tasks/assert_device_present.yml
       vars:
@@ -14,79 +19,63 @@
     - include_tasks: tasks/assert_device_present.yml
       vars:
         interface: "{{ slave2_device }}"
+    - block:
+        - name: "TEST Add Bond with 2 slaves"
+          debug:
+            msg: "##################################################"
+        - import_role:
+            name: linux-system-roles.network
+          vars:
+            network_connections:
+              # Create a bond master
+              - name: "{{ master_profile }}"
+                state: up
+                type: bond
+                interface_name: "{{ master_device }}"
+                # bond configuration settings: (optional)
+                bond:
+                  mode: active-backup
+                  miimon: 110
+              # enslave an ethernet to the bond
+              - name: "{{ slave1_profile }}"
+                state: up
+                type: ethernet
+                interface_name: "{{ slave1_device }}"
+                master: "{{ master_profile }}"
+              # enslave a second ethernet to the bond
+              - name: "{{ slave2_profile }}"
+                state: up
+                type: ethernet
+                interface_name: "{{ slave2_device }}"
+                master: "{{ master_profile }}"
+        - include_tasks: tasks/assert_device_present.yml
+          vars:
+            interface: "{{ master_device }}"
+        - include_tasks: tasks/assert_profile_present.yml
+          vars:
+            profile: "{{ item }}"
+          loop:
+            - "{{ master_profile }}"
+            - "{{ slave1_profile }}"
+            - "{{ slave2_profile }}"
 
-- name: Add test bond and slaves
-  hosts: all
-  vars:
-    master_profile: bond0
-    master_device: nm-bond
-    slave1_profile: bond0.0
-    slave1_device: test1
-    slave2_profile: bond0.1
-    slave2_device: test2
-    network_connections:
-      # Create a bond master
-      - name: "{{ master_profile }}"
-        state: up
-        type: bond
-        interface_name: "{{ master_device }}"
-        # bond configuration settings: (optional)
-        bond:
-          mode: active-backup
-          miimon: 110
+      always:
+        - block:
+            - import_role:
+                name: linux-system-roles.network
+              vars:
+                network_connections:
+                  - name: "{{ slave2_profile }}"
+                    persistent_state: absent
+                    state: down
+                  - name: "{{ slave1_profile }}"
+                    persistent_state: absent
+                    state: down
+                  - name: "{{ master_profile }}"
+                    persistent_state: absent
+                    state: down
 
-      # enslave an ethernet to the bond
-      - name: "{{ slave1_profile }}"
-        state: up
-        type: ethernet
-        interface_name: "{{ slave1_device }}"
-        master: "{{ master_profile }}"
-
-      # enslave a second ethernet to the bond
-      - name: "{{ slave2_profile }}"
-        state: up
-        type: ethernet
-        interface_name: "{{ slave2_device }}"
-        master: "{{ master_profile }}"
-
-  tasks:
-    - include_tasks: tasks/assert_device_present.yml
-      vars:
-        interface: "{{ master_device }}"
-    - include_tasks: tasks/assert_profile_present.yml
-      vars:
-        profile: "{{ item }}"
-      loop:
-        - "{{ master_profile }}"
-        - "{{ slave1_profile }}"
-        - "{{ slave2_profile }}"
-
-  roles:
-    - linux-system-roles.network
-
-
-
-- name: TEARDOWN remove profiles.
-  hosts: all
-  vars:
-    master_profile: bond0
-    master_device: nm-bond
-    slave1_profile: bond0.0
-    slave1_device: test1
-    slave2_profile: bond0.1
-    slave2_device: test2
-    network_connections:
-      - name: "{{ slave2_profile }}"
-        persistent_state: absent
-        state: down
-      - name: "{{ slave1_profile }}"
-        persistent_state: absent
-        state: down
-      - name: "{{ master_profile }}"
-        persistent_state: absent
-        state: down
-  ignore_errors: false
-  tasks:
-    - include_tasks: tasks/remove_test_interfaces.yml
-  roles:
-    - linux-system-roles.network
+              ignore_errors: true
+            - include_tasks: tasks/remove_test_interfaces.yml
+          tags:
+            - "tests::cleanup"
