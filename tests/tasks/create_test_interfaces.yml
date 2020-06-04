@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: BSD-3-Clause
+---
+- name: Install dnsmasq
+  package:
+    name: dnsmasq
+    state: present
+
+
+- name: Create test interfaces
+  shell: |
+    # Manage all veth devices starting with test*
+    echo 'ENV{ID_NET_DRIVER}=="veth", ENV{INTERFACE}=="test*", ENV{NM_UNMANAGED}="0"' >/etc/udev/rules.d/88-veth.rules
+    udevadm control --reload-rules
+    udevadm control --reload-rules
+
+    # Create a namespace for devices
+    ip netns add testsetup
+
+    # Setup simulated device test1 and test2 with IPv6 auto support
+    ip link add test1 type veth peer name test1p
+    ip link set test1p netns testsetup
+    ip netns exec testsetup ip link set test1p up
+    ip link add test2 type veth peer name test2p
+    ip link set test2p netns testsetup
+    ip netns exec testsetup ip link set test2p up
+
+    # Create the 'testbr' - providing both 10.x ipv4 and 2620:52:0 ipv6 dhcp
+    ip netns exec testsetup ip link add name testbr type bridge forward_delay 0 stp_state 1
+    ip netns exec testsetup ip link set testbr up
+    ip netns exec testsetup ip addr add 10.0.0.1/24 dev testbr
+    ip netns exec testsetup ip -6 addr add 2620:52::1/64 dev testbr
+
+    # Add test1, test2 peers into the testbr
+    ip netns exec testsetup ip link set test1p master testbr
+    ip netns exec testsetup ip link set test2p master testbr
+
+    # Run joint DHCP4/DHCP6 server with router advertisement enabled in veth namespace
+    ip netns exec testsetup dnsmasq --pid-file=/tmp/dhcp_testbr.pid \
+                                    --dhcp-leasefile=/tmp/dhcp_testbr.lease \
+                                    --dhcp-range=10.0.0.10,10.0.0.254,240 \
+                                    --dhcp-range=2620:52::10,2620:52::1ff,slaac,64,240 \
+                                    --enable-ra --interface=testbr --bind-interfaces
