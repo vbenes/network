@@ -12,7 +12,7 @@
     - name: "INIT Prepare setup"
       debug:
         msg: "##################################################"
-    - include_tasks: tasks/create_test_interfaces.yml
+    - include_tasks: tasks/create_test_interfaces_with_dhcp.yml
     - include_tasks: tasks/assert_device_present.yml
       vars:
         interface: "{{ slave1_device }}"
@@ -32,7 +32,6 @@
                 state: up
                 type: bond
                 interface_name: "{{ master_device }}"
-                # bond configuration settings: (optional)
                 bond:
                   mode: active-backup
                   miimon: 110
@@ -76,6 +75,6 @@
                     state: down
 
               ignore_errors: true
-            - include_tasks: tasks/remove_test_interfaces.yml
+            - include_tasks: tasks/remove_test_interfaces_with_dhcp.yml
           tags:
             - "tests::cleanup"

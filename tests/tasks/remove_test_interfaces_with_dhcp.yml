@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: BSD-3-Clause
+---
+- name: Remove test interfaces
+  shell: |
+    ip netns delete lsrdhcp
+    ip link delete test1
+    ip link delete test2
+
+    # Remove udev rule for NM to see veth devices starting with test*.....
+    rm -rf /etc/udev/rules.d/88-veth.rules
+    udevadm control --reload-rules
+    udevadm settle --timeout=5
+
+- name: Kill dnsmasq process
+  shell: pkill -F /run/dhcp_testbr.pid; rm -rf /run/dhcp_testbr.pid
