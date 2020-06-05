@@ -16,13 +16,13 @@
     # Create a namespace for devices
     ip netns add lsrdhcp
 
-    # Setup simulated device test1 and test2 with IPv6 auto support
-    ip link add test1 type veth peer name test1p
-    ip link set test1p netns lsrdhcp
-    ip netns exec lsrdhcp ip link set test1p up
-    ip link add test2 type veth peer name test2p
-    ip link set test2p netns lsrdhcp
-    ip netns exec lsrdhcp ip link set test2p up
+    # Setup simulated device {{dhcp_interface1}} and {{dhcp_interface2}} with IPv6 auto support
+    ip link add {{dhcp_interface1}} type veth peer name {{dhcp_interface1}}p
+    ip link set {{dhcp_interface1}}p netns lsrdhcp
+    ip netns exec lsrdhcp ip link set {{dhcp_interface1}}p up
+    ip link add {{dhcp_interface2}} type veth peer name {{dhcp_interface2}}p
+    ip link set {{dhcp_interface2}}p netns lsrdhcp
+    ip netns exec lsrdhcp ip link set {{dhcp_interface2}}p up
 
     # Create the 'testbr' - providing both 10.x ipv4 and 2620:52:0 ipv6 dhcp
     ip netns exec lsrdhcp ip link add name testbr type bridge forward_delay 0 stp_state 1
@@ -30,13 +30,13 @@
     ip netns exec lsrdhcp ip addr add 192.0.2.1/24 dev testbr
     ip netns exec lsrdhcp ip -6 addr add 2001:DB8::1/32 dev testbr
 
-    # Add test1, test2 peers into the testbr
-    ip netns exec lsrdhcp ip link set test1p master testbr
-    ip netns exec lsrdhcp ip link set test2p master testbr
+    # Add {{dhcp_interface1}}, {{dhcp_interface2}} peers into the testbr
+    ip netns exec lsrdhcp ip link set {{dhcp_interface1}}p master testbr
+    ip netns exec lsrdhcp ip link set {{dhcp_interface2}}p master testbr
 
     # Run joint DHCP4/DHCP6 server with router advertisement enabled in veth namespace
     ip netns exec lsrdhcp dnsmasq --pid-file=/run/dhcp_testbr.pid \
-                                    --dhcp-leasefile=/tmp/dhcp_testbr.lease \
+                                    --dhcp-leasefile=/run/dhcp_testbr.lease \
                                     --dhcp-range=192.0.2.1,192.0.2.254,240 \
                                     --dhcp-range=2001:DB8::10,2001:DB8::1FF,slaac,64,240 \
                                     --enable-ra --interface=testbr --bind-interfaces

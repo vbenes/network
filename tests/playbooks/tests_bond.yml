@@ -5,9 +5,9 @@
     master_profile: bond0
     master_device: nm-bond
     slave1_profile: bond0.0
-    slave1_device: test1
+    dhcp_interface1: test1
     slave2_profile: bond0.1
-    slave2_device: test2
+    dhcp_interface2: test2
   tasks:
     - name: "INIT Prepare setup"
       debug:
@@ -15,10 +15,10 @@
     - include_tasks: tasks/create_test_interfaces_with_dhcp.yml
     - include_tasks: tasks/assert_device_present.yml
       vars:
-        interface: "{{ slave1_device }}"
+        interface: "{{ dhcp_interface1 }}"
     - include_tasks: tasks/assert_device_present.yml
       vars:
-        interface: "{{ slave2_device }}"
+        interface: "{{ dhcp_interface2 }}"
     - block:
         - name: "TEST Add Bond with 2 slaves"
           debug:
@@ -39,13 +39,13 @@
               - name: "{{ slave1_profile }}"
                 state: up
                 type: ethernet
-                interface_name: "{{ slave1_device }}"
+                interface_name: "{{ dhcp_interface1 }}"
                 master: "{{ master_profile }}"
               # enslave a second ethernet to the bond
               - name: "{{ slave2_profile }}"
                 state: up
                 type: ethernet
-                interface_name: "{{ slave2_device }}"
+                interface_name: "{{ dhcp_interface2 }}"
                 master: "{{ master_profile }}"
         - include_tasks: tasks/assert_device_present.yml
           vars:

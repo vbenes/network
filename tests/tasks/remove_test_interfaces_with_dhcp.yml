@@ -12,4 +12,7 @@
     udevadm settle --timeout=5
 
 - name: Kill dnsmasq process
-  shell: pkill -F /run/dhcp_testbr.pid; rm -rf /run/dhcp_testbr.pid
+  shell: |
+    pkill -F /run/dhcp_testbr.pid
+    rm -rf /run/dhcp_testbr.pid
+    rm -rf /run/dhcp_testbr.lease
