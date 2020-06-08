@@ -9,14 +9,16 @@
 - name: Create test interfaces
   shell: |
     # NM to see veth devices starting with test* as managed after ip add..
-    echo 'ENV{ID_NET_DRIVER}=="veth", ENV{INTERFACE}=="test*", ENV{NM_UNMANAGED}="0"' >/etc/udev/rules.d/88-veth.rules
+    echo 'ENV{ID_NET_DRIVER}=="veth",\
+          ENV{INTERFACE}=="test*", \
+          ENV{NM_UNMANAGED}="0"' >/etc/udev/rules.d/88-veth.rules
     udevadm control --reload-rules
     udevadm settle --timeout=5
 
     # Create a namespace for devices
     ip netns add lsrdhcp
 
-    # Setup simulated device {{dhcp_interface1}} and {{dhcp_interface2}} with IPv6 auto support
+    # Setuptwo devices with IPv4/IPv6 auto support
     ip link add {{dhcp_interface1}} type veth peer name {{dhcp_interface1}}p
     ip link set {{dhcp_interface1}}p netns lsrdhcp
     ip netns exec lsrdhcp ip link set {{dhcp_interface1}}p up
@@ -25,7 +27,8 @@
     ip netns exec lsrdhcp ip link set {{dhcp_interface2}}p up
 
     # Create the 'testbr' - providing both 10.x ipv4 and 2620:52:0 ipv6 dhcp
-    ip netns exec lsrdhcp ip link add name testbr type bridge forward_delay 0 stp_state 1
+    ip netns exec lsrdhcp \
+            ip link add name testbr type bridge forward_delay 0 stp_state 1
     ip netns exec lsrdhcp ip link set testbr up
     ip netns exec lsrdhcp ip addr add 192.0.2.1/24 dev testbr
     ip netns exec lsrdhcp ip -6 addr add 2001:DB8::1/32 dev testbr
@@ -34,9 +37,10 @@
     ip netns exec lsrdhcp ip link set {{dhcp_interface1}}p master testbr
     ip netns exec lsrdhcp ip link set {{dhcp_interface2}}p master testbr
 
-    # Run joint DHCP4/DHCP6 server with router advertisement enabled in veth namespace
-    ip netns exec lsrdhcp dnsmasq --pid-file=/run/dhcp_testbr.pid \
-                                    --dhcp-leasefile=/run/dhcp_testbr.lease \
-                                    --dhcp-range=192.0.2.1,192.0.2.254,240 \
-                                    --dhcp-range=2001:DB8::10,2001:DB8::1FF,slaac,64,240 \
-                                    --enable-ra --interface=testbr --bind-interfaces
+    # Run joint DHCP4/DHCP6 server with RA enabled in veth namespace
+    ip netns exec lsrdhcp dnsmasq \
+                        --pid-file=/run/dhcp_testbr.pid \
+                        --dhcp-leasefile=/run/dhcp_testbr.lease \
+                        --dhcp-range=192.0.2.1,192.0.2.254,240 \
+                        --dhcp-range=2001:DB8::10,2001:DB8::1FF,slaac,64,240 \
+                        --enable-ra --interface=testbr --bind-interfaces

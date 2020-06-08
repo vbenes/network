@@ -12,11 +12,11 @@
     - name: "INIT Prepare setup"
       debug:
         msg: "##################################################"
-    - include_tasks: tasks/create_test_interfaces_with_dhcp.yml
-    - include_tasks: tasks/assert_device_present.yml
+    - import_tasks: tasks/create_test_interfaces_with_dhcp.yml
+    - import_tasks: tasks/assert_device_present.yml
       vars:
         interface: "{{ dhcp_interface1 }}"
-    - include_tasks: tasks/assert_device_present.yml
+    - import_tasks: tasks/assert_device_present.yml
       vars:
         interface: "{{ dhcp_interface2 }}"
     - block:
@@ -47,7 +47,7 @@
                 type: ethernet
                 interface_name: "{{ dhcp_interface2 }}"
                 master: "{{ master_profile }}"
-        - include_tasks: tasks/assert_device_present.yml
+        - import_tasks: tasks/assert_device_present.yml
           vars:
             interface: "{{ master_device }}"
         - include_tasks: tasks/assert_profile_present.yml
@@ -88,8 +88,7 @@
                   - name: "{{ master_profile }}"
                     persistent_state: absent
                     state: down
-
               ignore_errors: true
-            - include_tasks: tasks/remove_test_interfaces_with_dhcp.yml
+            - import_tasks: tasks/remove_test_interfaces_with_dhcp.yml
           tags:
             - "tests::cleanup"
