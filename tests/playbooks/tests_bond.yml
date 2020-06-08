@@ -57,7 +57,22 @@
             - "{{ master_profile }}"
             - "{{ slave1_profile }}"
             - "{{ slave2_profile }}"
-
+        - command: grep 'Polling Interval' /proc/net/bonding/{{ master_device }}
+          name: "** TEST check polling interval"
+          register: result
+          until: "'110' in result.stdout"
+        - command: ip -4 a s {{ master_device }}
+          name: "** TEST check IPv4"
+          register: result
+          until: "'192.0.2' in result.stdout"
+          retries: 20
+          delay: 2
+        - command: ip -6 a s {{ master_device }}
+          name: "** TEST check IPv6"
+          register: result
+          until: "'2001' in result.stdout"
+          retries: 20
+          delay: 2
       always:
         - block:
             - import_role:
