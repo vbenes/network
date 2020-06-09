@@ -28,6 +28,9 @@
     ip -6 addr add 2001:DB8::1/32 dev testbr
 
     if grep 'release 6' /etc/redhat-release; then
+        # We need radvd only in rhel6
+        if ! rpm -q --quiet radvd; then yum -y install radvd; fi
+        
         # Add {{dhcp_interface1}}, {{dhcp_interface2}} peers into the testbr
         brctl addif testbr {{dhcp_interface1}}p
         brctl addif testbr {{dhcp_interface2}}p
@@ -43,20 +46,15 @@
             --interface=testbr --bind-interfaces
 
         # start radvd for ipv6
-        cat >/etc/radvd.conf <<EOL
-        interface testbr
-        {
-                AdvSendAdvert on;
-                prefix 2001:DB8::/64
-                {
-                        AdvOnLink on;
-                };
+        echo 'interface testbr {' > /etc/radvd.conf
+        echo '        AdvSendAdvert on;' >> /etc/radvd.conf
+        echo '        prefix 2001:DB8::/64 { ' >> /etc/radvd.conf
+        echo '              AdvOnLink on; }; ' >> /etc/radvd.conf
+        echo '        }; ' >> /etc/radvd.conf
 
-        };
-EOL
         # enable ipv6 forwarding
         sysctl -w net.ipv6.conf.all.forwarding=1
-        service radvd start
+        service radvd restart
 
     else
         ip link set {{dhcp_interface1}}p master testbr
