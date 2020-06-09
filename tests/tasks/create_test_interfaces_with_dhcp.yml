@@ -15,35 +15,57 @@
     udevadm control --reload-rules
     udevadm settle --timeout=5
 
-    # Create a namespace for devices
-    ip netns add lsrdhcp
-
     # Setuptwo devices with IPv4/IPv6 auto support
     ip link add {{dhcp_interface1}} type veth peer name {{dhcp_interface1}}p
-    ip link set {{dhcp_interface1}}p netns lsrdhcp
-    ip netns exec lsrdhcp ip link set {{dhcp_interface1}}p up
+    ip link set {{dhcp_interface1}}p up
     ip link add {{dhcp_interface2}} type veth peer name {{dhcp_interface2}}p
-    ip link set {{dhcp_interface2}}p netns lsrdhcp
-    ip netns exec lsrdhcp ip link set {{dhcp_interface2}}p up
+    ip link set {{dhcp_interface2}}p up
 
     # Create the 'testbr' - providing both 10.x ipv4 and 2620:52:0 ipv6 dhcp
-    ip netns exec lsrdhcp \
-            ip link add name testbr type bridge forward_delay 0
-    ip netns exec lsrdhcp ip link set testbr up
-    ip netns exec lsrdhcp ip addr add 192.0.2.1/24 dev testbr
-    ip netns exec lsrdhcp ip -6 addr add 2001:DB8::1/32 dev testbr
+    ip link add name testbr type bridge forward_delay 0
+    ip link set testbr up
+    ip addr add 192.0.2.1/24 dev testbr
+    ip -6 addr add 2001:DB8::1/32 dev testbr
 
-    # Add {{dhcp_interface1}}, {{dhcp_interface2}} peers into the testbr
-    ip netns exec lsrdhcp ip link set {{dhcp_interface1}}p master testbr
-    ip netns exec lsrdhcp ip link set {{dhcp_interface2}}p master testbr
+    if grep 'release 6' /etc/redhat-release; then
+        # Add {{dhcp_interface1}}, {{dhcp_interface2}} peers into the testbr
+        brctl addif testbr {{dhcp_interface1}}p
+        brctl addif testbr {{dhcp_interface2}}p
 
-    # in RHEL6 /run is not present
-    mkdir -p /run
+        # in RHEL6 /run is not present
+        mkdir -p /run
 
-    # Run joint DHCP4/DHCP6 server with RA enabled in veth namespace
-    ip netns exec lsrdhcp dnsmasq \
-                        --pid-file=/run/dhcp_testbr.pid \
-                        --dhcp-leasefile=/run/dhcp_testbr.lease \
-                        --dhcp-range=192.0.2.1,192.0.2.254,240 \
-                        --dhcp-range=2001:DB8::10,2001:DB8::1FF,slaac,64,240 \
-                        --enable-ra --interface=testbr --bind-interfaces
+        # and dnsmasq does not support ipv6
+        dnsmasq \
+            --pid-file=/run/dhcp_testbr.pid \
+            --dhcp-leasefile=/run/dhcp_testbr.lease \
+            --dhcp-range=192.0.2.1,192.0.2.254,240 \
+            --interface=testbr --bind-interfaces
+
+        # start radvd for ipv6
+        cat >/etc/radvd.conf <<EOL
+        interface testbr
+        {
+                AdvSendAdvert on;
+                prefix 2001:DB8::/64
+                {
+                        AdvOnLink on;
+                };
+
+        };
+EOL
+        # enable ipv6 forwarding
+        sysctl -w net.ipv6.conf.all.forwarding=1
+        service radvd start
+
+    else
+        ip link set {{dhcp_interface1}}p master testbr
+        ip link set {{dhcp_interface2}}p master testbr
+        # Run joint DHCP4/DHCP6 server with RA enabled in veth namespace
+        dnsmasq \
+            --pid-file=/run/dhcp_testbr.pid \
+            --dhcp-leasefile=/run/dhcp_testbr.lease \
+            --dhcp-range=192.0.2.1,192.0.2.254,240 \
+            --dhcp-range=2001:DB8::10,2001:DB8::1FF,slaac,64,240 \
+            --enable-ra --interface=testbr --bind-interfaces
+    fi
