@@ -104,6 +104,7 @@
                     state: down
               ignore_errors: true
             - command: ip link del {{ master_device }}
+              ignore_errors: true
             - import_tasks: tasks/remove_test_interfaces_with_dhcp.yml
           tags:
             - "tests::cleanup"
