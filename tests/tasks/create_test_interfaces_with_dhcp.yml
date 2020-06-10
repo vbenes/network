@@ -28,9 +28,10 @@
     ip -6 addr add 2001:DB8::1/32 dev testbr
 
     if grep 'release 6' /etc/redhat-release; then
-        # We need radvd only in rhel6
+        # We need bridge-utils and radvd only in rhel6
         if ! rpm -q --quiet radvd; then yum -y install radvd; fi
-        
+        if ! rpm -q --quiet bridge-utils; then yum -y install bridge-utils; fi
+
         # Add {{dhcp_interface1}}, {{dhcp_interface2}} peers into the testbr
         brctl addif testbr {{dhcp_interface1}}p
         brctl addif testbr {{dhcp_interface2}}p
