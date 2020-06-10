@@ -20,4 +20,6 @@
     if grep 'release 6' /etc/redhat-release; then
         # Stop radvd server
         service radvd stop
+        iptables -D INPUT -i testbr -p udp --dport 67:68 --sport 67:68 -j ACCEPT
+
     fi
